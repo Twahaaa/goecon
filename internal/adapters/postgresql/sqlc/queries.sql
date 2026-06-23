@@ -1,13 +1,19 @@
 -- name: ListProducts :many
 SELECT *
 FROM products;
+
+
 -- name: FindProductsById :one
 SELECT *
 FROM products
 WHERE id = $1;
+
+
 -- name: ListOrders :many
 SELECT *
 FROM orders;
+
+
 -- name: FindOrderById :many
 SELECT orders.id,
     orders.customer_id,
@@ -18,3 +24,6 @@ SELECT orders.id,
 FROM orders
     INNER JOIN order_items ON orders.id = order_items.order_id
 WHERE orders.id = $1;
+
+-- name: CreateProduct :one
+INSERT INTO products (name, price_in_cents, quantity) VALUES ($1, $2, $3) RETURNING *;
