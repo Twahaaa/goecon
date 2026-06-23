@@ -21,14 +21,14 @@ func NewHandler(service Service) *handler{
 
 func (h *handler) ListOrders(w http.ResponseWriter, r *http.Request){
 	// 1. Call the service  -> ListProduct
-	products ,err := h.service.ListOrders(r.Context())
+	orders ,err := h.service.ListOrders(r.Context())
 	
 	if err!=nil{
 		log.Println(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError) 
 		return 
 	}
-	json.Write(w, http.StatusOK, products)
+	json.Write(w, http.StatusOK, orders)
 }
 
 func (h *handler) GetOrderById(w http.ResponseWriter, r *http.Request){
@@ -40,4 +40,15 @@ func (h *handler) GetOrderById(w http.ResponseWriter, r *http.Request){
 	}
 	product, err := h.service.GetOrderById(r.Context(), id)
 	json.Write(w, http.StatusOK, product)
+}
+
+func (h *handler) CreateOrder(w http.ResponseWriter, r *http.Request){
+	order, err := json.Read[CreateOrderInput](r)
+	if err != nil{
+		log.Println(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError) 
+		return 
+	}
+	orderItems, err := h.service.CreateOrder(r.Context(), order)
+	json.Write(w, http.StatusCreated, orderItems)
 }

@@ -45,6 +45,7 @@ func (app *application) mount() http.Handler {
 	r.Route("/orders", func(r chi.Router) {
 		r.Get("/", ordersHandler.ListOrders)
 		r.Get("/{id}", ordersHandler.GetOrderById)
+		r.Post("/", ordersHandler.CreateOrder)
 	})
 	return r
 }

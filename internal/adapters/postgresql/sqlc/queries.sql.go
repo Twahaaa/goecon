@@ -11,6 +11,46 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const createOrder = `-- name: CreateOrder :one
+INSERT INTO orders (customer_id) VALUES ($1) RETURNING id, customer_id, created_at
+`
+
+func (q *Queries) CreateOrder(ctx context.Context, customerID int64) (Order, error) {
+	row := q.db.QueryRow(ctx, createOrder, customerID)
+	var i Order
+	err := row.Scan(&i.ID, &i.CustomerID, &i.CreatedAt)
+	return i, err
+}
+
+const createOrderItems = `-- name: CreateOrderItems :one
+INSERT INTO order_items (order_id, product_id, quantity, price_cents) VALUES ($1, $2, $3, $4) RETURNING id, order_id, product_id, quantity, price_cents
+`
+
+type CreateOrderItemsParams struct {
+	OrderID    int64 `json:"order_id"`
+	ProductID  int64 `json:"product_id"`
+	Quantity   int32 `json:"quantity"`
+	PriceCents int32 `json:"price_cents"`
+}
+
+func (q *Queries) CreateOrderItems(ctx context.Context, arg CreateOrderItemsParams) (OrderItem, error) {
+	row := q.db.QueryRow(ctx, createOrderItems,
+		arg.OrderID,
+		arg.ProductID,
+		arg.Quantity,
+		arg.PriceCents,
+	)
+	var i OrderItem
+	err := row.Scan(
+		&i.ID,
+		&i.OrderID,
+		&i.ProductID,
+		&i.Quantity,
+		&i.PriceCents,
+	)
+	return i, err
+}
+
 const createProduct = `-- name: CreateProduct :one
 INSERT INTO products (name, price_in_cents, quantity) VALUES ($1, $2, $3) RETURNING id, name, price_in_cents, quantity, created_at
 `
@@ -32,6 +72,17 @@ func (q *Queries) CreateProduct(ctx context.Context, arg CreateProductParams) (P
 		&i.CreatedAt,
 	)
 	return i, err
+}
+
+const fetchPrice = `-- name: FetchPrice :one
+SELECT price_in_cents FROM products WHERE id = ($1)
+`
+
+func (q *Queries) FetchPrice(ctx context.Context, id int64) (int32, error) {
+	row := q.db.QueryRow(ctx, fetchPrice, id)
+	var price_in_cents int32
+	err := row.Scan(&price_in_cents)
+	return price_in_cents, err
 }
 
 const findOrderById = `-- name: FindOrderById :many
