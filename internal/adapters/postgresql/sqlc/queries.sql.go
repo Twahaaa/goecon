@@ -12,7 +12,9 @@ import (
 )
 
 const createOrder = `-- name: CreateOrder :one
-INSERT INTO orders (customer_id) VALUES ($1) RETURNING id, customer_id, created_at
+INSERT INTO orders (customer_id)
+VALUES ($1)
+RETURNING id, customer_id, created_at
 `
 
 func (q *Queries) CreateOrder(ctx context.Context, customerID int64) (Order, error) {
@@ -23,7 +25,9 @@ func (q *Queries) CreateOrder(ctx context.Context, customerID int64) (Order, err
 }
 
 const createOrderItems = `-- name: CreateOrderItems :one
-INSERT INTO order_items (order_id, product_id, quantity, price_cents) VALUES ($1, $2, $3, $4) RETURNING id, order_id, product_id, quantity, price_cents
+INSERT INTO order_items (order_id, product_id, quantity, price_cents)
+VALUES ($1, $2, $3, $4)
+RETURNING id, order_id, product_id, quantity, price_cents
 `
 
 type CreateOrderItemsParams struct {
@@ -52,7 +56,9 @@ func (q *Queries) CreateOrderItems(ctx context.Context, arg CreateOrderItemsPara
 }
 
 const createProduct = `-- name: CreateProduct :one
-INSERT INTO products (name, price_in_cents, quantity) VALUES ($1, $2, $3) RETURNING id, name, price_in_cents, quantity, created_at
+INSERT INTO products (name, price_in_cents, quantity)
+VALUES ($1, $2, $3)
+RETURNING id, name, price_in_cents, quantity, created_at
 `
 
 type CreateProductParams struct {
@@ -74,8 +80,35 @@ func (q *Queries) CreateProduct(ctx context.Context, arg CreateProductParams) (P
 	return i, err
 }
 
+const decrementProductQuantity = `-- name: DecrementProductQuantity :one
+UPDATE products
+SET quantity = quantity - $2
+WHERE id = $1
+RETURNING id, name, price_in_cents, quantity, created_at
+`
+
+type DecrementProductQuantityParams struct {
+	ID       int64 `json:"id"`
+	Quantity int32 `json:"quantity"`
+}
+
+func (q *Queries) DecrementProductQuantity(ctx context.Context, arg DecrementProductQuantityParams) (Product, error) {
+	row := q.db.QueryRow(ctx, decrementProductQuantity, arg.ID, arg.Quantity)
+	var i Product
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.PriceInCents,
+		&i.Quantity,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
 const fetchPrice = `-- name: FetchPrice :one
-SELECT price_in_cents FROM products WHERE id = ($1)
+SELECT price_in_cents
+FROM products
+WHERE id = ($1)
 `
 
 func (q *Queries) FetchPrice(ctx context.Context, id int64) (int32, error) {
