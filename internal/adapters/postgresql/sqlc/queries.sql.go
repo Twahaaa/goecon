@@ -106,16 +106,22 @@ func (q *Queries) DecrementProductQuantity(ctx context.Context, arg DecrementPro
 }
 
 const fetchPrice = `-- name: FetchPrice :one
-SELECT price_in_cents
+SELECT id, name, price_in_cents, quantity, created_at
 FROM products
 WHERE id = ($1)
 `
 
-func (q *Queries) FetchPrice(ctx context.Context, id int64) (int32, error) {
+func (q *Queries) FetchPrice(ctx context.Context, id int64) (Product, error) {
 	row := q.db.QueryRow(ctx, fetchPrice, id)
-	var price_in_cents int32
-	err := row.Scan(&price_in_cents)
-	return price_in_cents, err
+	var i Product
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.PriceInCents,
+		&i.Quantity,
+		&i.CreatedAt,
+	)
+	return i, err
 }
 
 const findOrderById = `-- name: FindOrderById :many

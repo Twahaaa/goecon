@@ -27,7 +27,7 @@ INSERT INTO orders (customer_id)
 VALUES ($1)
 RETURNING *;
 -- name: FetchPrice :one
-SELECT price_in_cents
+SELECT *
 FROM products
 WHERE id = ($1);
 -- name: CreateOrderItems :one

@@ -2,6 +2,7 @@ package orders
 
 import (
 	"context"
+	"fmt"
 
 	repo "github.com/Twahaaa/goecom/internal/adapters/postgresql/sqlc"
 )
@@ -54,17 +55,21 @@ func (s *svc) CreateOrder(ctx context.Context, input CreateOrderInput) (CreateOr
 	items := []repo.OrderItem{}
 
 	for _, item := range input.Items {
-		price, err := s.repo.FetchPrice(ctx, item.ProductId)
-
+		product, err := s.repo.FetchPrice(ctx, item.ProductId)
+		
 		if err != nil {
 			return CreateOrderResponse{}, err
 		}
 
+		if product.Quantity < int32(item.Quantity) {
+			return CreateOrderResponse{}, fmt.Errorf("insufficient stock for product %d", item.ProductId)
+		}
+		
 		orderItem, err := s.repo.CreateOrderItems(ctx, repo.CreateOrderItemsParams{
 			OrderID:    order.ID,
 			ProductID:  item.ProductId,
 			Quantity:   int32(item.Quantity),
-			PriceCents: price,
+			PriceCents: product.PriceInCents,
 		})
 
 		if err != nil {
